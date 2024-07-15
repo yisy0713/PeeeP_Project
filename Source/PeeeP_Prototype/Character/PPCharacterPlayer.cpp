@@ -17,8 +17,8 @@ void APPCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APlayerController* PlayerController = CastChecked<APlayerController>(GetController());
-	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+	APlayerController* PlayerController = CastChecked<APlayerController>(GetController());  // 플레이어 컨트롤러 할당
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) // 입력 매핑 추가?
 	{
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
@@ -26,18 +26,19 @@ void APPCharacterPlayer::BeginPlay()
 
 void APPCharacterPlayer::Tick(float DeltaTime)
 {
-	if (GrabHandle->GetGrabbedComponent())
+	if (GrabHandle->GetGrabbedComponent())  // 잡고 있는 물체 위치 업데이트
 	{
 		GrabHandle->SetTargetLocation((GetActorForwardVector() * 50.0f) + GetActorLocation());
 	}
 }
 
-void APPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void APPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)  
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 
+	// 각 플레이어 입력에 콜백 함수 바인딩
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APPCharacterPlayer::Move);
@@ -48,7 +49,7 @@ void APPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 }
 
-void APPCharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterControlType)
+void APPCharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterControlType)  // 이게뭐야! 몰라!!
 {
 	UPPCharacterControlData* NewCharacterControl = CharacterControlManager[NewCharacterControlType];
 	check(NewCharacterControl);
@@ -73,6 +74,7 @@ void APPCharacterPlayer::SetCharacterControlData(const UPPCharacterControlData* 
 {
 	Super::SetCharacterControlData(CharacterControlData);
 
+	// 카메라 암? 스프링암? 조정
 	CameraBoom->TargetArmLength = CharacterControlData->TargetArmLength;
 	CameraBoom->SetRelativeRotation(CharacterControlData->RelativeRotation);
 	CameraBoom->bUsePawnControlRotation = CharacterControlData->bUsePawnControlRotation;
@@ -82,7 +84,7 @@ void APPCharacterPlayer::SetCharacterControlData(const UPPCharacterControlData* 
 	CameraBoom->bDoCollisionTest = CharacterControlData->bDoCollisionTest;
 }
 
-void APPCharacterPlayer::Move(const FInputActionValue& Value)
+void APPCharacterPlayer::Move(const FInputActionValue& Value)  // 움지기기
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -96,7 +98,7 @@ void APPCharacterPlayer::Move(const FInputActionValue& Value)
 	AddMovementInput(RightDirection, MovementVector.Y);
 }
 
-void APPCharacterPlayer::Look(const FInputActionValue& Value)
+void APPCharacterPlayer::Look(const FInputActionValue& Value)  // 시선 조정
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
@@ -104,7 +106,7 @@ void APPCharacterPlayer::Look(const FInputActionValue& Value)
 	AddControllerPitchInput(LookAxisVector.Y);
 }
 
-void APPCharacterPlayer::ButtonInteraction(const FInputActionValue& Value)
+void APPCharacterPlayer::ButtonInteraction(const FInputActionValue& Value)  // 버튼 상호작용
 {
 	FVector CameraPos = FollowCamera->GetComponentLocation();
 	FVector CameraForwardVector = FollowCamera->GetForwardVector();
@@ -131,7 +133,6 @@ void APPCharacterPlayer::ButtonInteraction(const FInputActionValue& Value)
 	FColor DebugColor(255, 0, 0);
 
 	DrawDebugLine(GetWorld(), CameraPos, EndPos, DebugColor, false, 5.0f);
-
 }
 
 void APPCharacterPlayer::GrabInteraction()
