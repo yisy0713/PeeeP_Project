@@ -49,7 +49,7 @@ void APPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 }
 
-void APPCharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterControlType)  // 이게뭐야! 몰라!!
+void APPCharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterControlType)  // 키 매핑
 {
 	UPPCharacterControlData* NewCharacterControl = CharacterControlManager[NewCharacterControlType];
 	check(NewCharacterControl);
@@ -121,9 +121,9 @@ void APPCharacterPlayer::ButtonInteraction(const FInputActionValue& Value)  // �
 	if (IsHit)
 	{
 		AActor* HitActor = HitResult.GetActor();
-		IPPButtonExecuteInterface* ButtonActor = Cast<IPPButtonExecuteInterface>(HitActor);
+		IPPButtonExecuteInterface* ButtonActor = Cast<IPPButtonExecuteInterface>(HitActor);   // hitActor가 버튼이 갖고있는 인터페이스 갖고잇는지 화긴
 		ensure(ButtonActor);
-		if (ButtonActor != nullptr)
+		if (ButtonActor != nullptr) // 디버깅용
 		{
 			UE_LOG(LogTemp, Log, TEXT("FindButton"));
 			ButtonActor->Execute();
