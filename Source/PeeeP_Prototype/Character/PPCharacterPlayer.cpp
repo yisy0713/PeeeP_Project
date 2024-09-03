@@ -6,13 +6,15 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/DefaultPawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "PPCharacterControlData.h"
-#include "Interface/PPButtonExecuteInterface.h"
+#include "Interface/PPInteractableObjectInterface.h"
 #include "Parts/PartsComponent/PPGrabParts.h"
 #include "Parts/PartsData/PPPartsDataBase.h"
+#include "Component/PPElectricDischargeComponent.h"
 
 
 APPCharacterPlayer::APPCharacterPlayer()
@@ -43,16 +45,21 @@ APPCharacterPlayer::APPCharacterPlayer()
 	{
 		ButtonInteract = ButtonInteractRef.Object;
 	}
-	static ConstructorHelpers::FObjectFinder<UInputAction> GrabInteractRef(TEXT("/Script/EnhancedInput.InputAction'/Game/Input/Actions/IA_Grab.IA_Grab'"));
-	if (nullptr != GrabInteractRef.Object)
+	static ConstructorHelpers::FObjectFinder<UInputAction> ElectricDischargeActionRef(TEXT("/Script/EnhancedInput.InputAction'/Game/Input/Actions/IA_Discharge.IA_Discharge'"));
+	if (!ElectricDischargeActionRef.Object)
 	{
-		GrabAction = GrabInteractRef.Object;
+		ElectricDischargeAction = ElectricDischargeActionRef.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UInputAction> ElectricDischargeModeChangeActionRef(TEXT("/Script/EnhancedInput.InputAction'/Game/Input/Actions/IA_DischargeModeChange.IA_DischargeModeChange'"));
+	if (!ElectricDischargeModeChangeActionRef.Object)
+	{
+		ElectricDischargeModeChangeAction = ElectricDischargeModeChangeActionRef.Object;
 	}
 
 	// Camera
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));	// CameraBoom 컴포넌트를 가져옴
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 600.0f;
+	CameraBoom->TargetArmLength = 400.0f;
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->SetRelativeLocation(FVector(0.0f, 0.0f, 100.f));
 	CameraBoom->bEnableCameraLag = true;
@@ -65,6 +72,12 @@ APPCharacterPlayer::APPCharacterPlayer()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+	ElectricDischargeComponent = CreateDefaultSubobject<UPPElectricDischargeComponent>(TEXT("ElectricDischargeComponent"));
+
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+	GetCharacterMovement()->GravityScale = 1.6f;
+	this->MaxWalkSpeed = 200.0f;
+	GetCharacterMovement()->MaxWalkSpeed = this->MaxWalkSpeed;
 }
 
 void APPCharacterPlayer::BeginPlay()
@@ -84,7 +97,7 @@ void APPCharacterPlayer::BeginPlay()
 
 void APPCharacterPlayer::Tick(float DeltaTime)
 {
-	
+
 }
 
 void APPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -98,7 +111,13 @@ void APPCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APPCharacterPlayer::Move);
 	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APPCharacterPlayer::Look);
 	EnhancedInputComponent->BindAction(ButtonInteract, ETriggerEvent::Triggered, this, &APPCharacterPlayer::ButtonInteraction);
-
+	if (ElectricDischargeComponent)
+	{
+		EnhancedInputComponent->BindAction(ElectricDischargeAction, ETriggerEvent::Ongoing, ElectricDischargeComponent.Get(), &UPPElectricDischargeComponent::Charging);
+		EnhancedInputComponent->BindAction(ElectricDischargeAction, ETriggerEvent::Completed, ElectricDischargeComponent.Get(), &UPPElectricDischargeComponent::Discharge);
+		EnhancedInputComponent->BindAction(ElectricDischargeModeChangeAction, ETriggerEvent::Completed, ElectricDischargeComponent.Get(), &UPPElectricDischargeComponent::ChangeDischargeMode);
+	}
+	
 }
 
 void APPCharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterControlType)
@@ -165,19 +184,19 @@ void APPCharacterPlayer::ButtonInteraction(const FInputActionValue& Value)
 
 	FHitResult HitResult;
 	FCollisionQueryParams CollisionParam(SCENE_QUERY_STAT(Button), false, this);
-	
+
 
 	bool IsHit = GetWorld()->LineTraceSingleByChannel(HitResult, CameraPos, EndPos, ECC_GameTraceChannel1, CollisionParam, FCollisionResponseParams(ECR_Block));
 
 	if (IsHit)
 	{
 		AActor* HitActor = HitResult.GetActor();
-		IPPButtonExecuteInterface* ButtonActor = Cast<IPPButtonExecuteInterface>(HitActor);
+		IPPInteractableObjectInterface* ButtonActor = Cast<IPPInteractableObjectInterface>(HitActor);
 		ensure(ButtonActor);
 		if (ButtonActor != nullptr)
 		{
 			UE_LOG(LogTemp, Log, TEXT("FindButton"));
-			ButtonActor->Execute();
+			ButtonActor->Interact();
 		}
 	}
 
@@ -204,6 +223,17 @@ void APPCharacterPlayer::SwitchParts(UPPPartsDataBase* InPartsData)
 	UActorComponent* PartsComponent = AddComponentByClass(InPartsData->PartsComponent, true, FTransform::Identity, false);
 	Parts = CastChecked<UPPPartsBase>(PartsComponent);
 }
+
+void APPCharacterPlayer::ReduationMaxWalkSpeedRatio(float InReductionRatio)
+{
+	GetCharacterMovement()->MaxWalkSpeed *= InReductionRatio;
+}
+
+void APPCharacterPlayer::RevertMaxWalkSpeed()
+{
+	GetCharacterMovement()->MaxWalkSpeed = this->MaxWalkSpeed;
+}
+
 
 
 
