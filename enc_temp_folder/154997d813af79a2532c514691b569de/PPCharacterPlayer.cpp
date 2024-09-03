@@ -223,6 +223,7 @@ UCameraComponent* APPCharacterPlayer::GetCamera()
 	return FollowCamera;
 }
 
+
 void APPCharacterPlayer::SwitchParts(UPPPartsDataBase* InPartsData)
 {
 	if (Parts)
@@ -290,3 +291,8 @@ void APPCharacterPlayer::TakeDamage(float DamageAmount)
 		Health = 0.0f;
 	}
 }
+
+
+
+
+

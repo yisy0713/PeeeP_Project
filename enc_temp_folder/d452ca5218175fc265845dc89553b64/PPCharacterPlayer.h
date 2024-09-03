@@ -92,7 +92,6 @@ public:
 	void ReduationMaxWalkSpeedRatio(float InReductionRatio);
 	void RevertMaxWalkSpeed();
 
-
 // 게임 세이브&로드
 public:
 	void SaveGame();
@@ -100,15 +99,15 @@ public:
 	void LoadGame();
 
 protected:
-	// 플레이어 체력(게임 세이브&로드 테스트용)
+	// 플레이어 체력
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Stats")
 	float Health;
 
-	// 최대 체력(게임 세이브&로드 테스트용)
+	// 최대 체력
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Stats")
 	float MaxHealth;
 
-	// 데미지 받기(게임 세이브&로드 테스트용)
+	// 데미지 받기
 	UFUNCTION(BlueprintCallable, Category = "Player Stats")
 	void TakeDamage(float DamageAmount);
 };
